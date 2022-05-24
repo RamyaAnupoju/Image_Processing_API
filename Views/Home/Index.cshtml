@@ -1,0 +1,254 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+@section Scripts {
+    <script type="text/javascript">
+        $("#imageFile").change(function () {
+            var form = new FormData();
+            var files = $('#imageFile')[0].files;
+
+            // Check file selected or not
+            if (files.length > 0) {
+                form.append('imageFile', files[0]);
+            };
+
+            var imageUpload = {
+                "url": "https://localhost:44382/Upload/UploadFile",
+                "method": "POST",
+                "timeout": 0,
+                "processData": false,
+                "mimeType": "multipart/form-data",
+                "contentType": false,
+                "data": form
+            };
+
+            $.ajax(imageUpload).done(function (response) {
+                var timestamp = new Date().getTime();
+                var image = document.getElementById("imageId");
+                image.src = response + "?t=" + timestamp;
+                image.FilePath = response;
+                previewFile();
+            });
+        });
+
+        $(".individualFilter").click(function () {
+            var preview = document.querySelector('img');
+            var key = $(this).attr("for");
+            var value = $(this).prev().val();
+            var object = {};
+            object['FilePath'] = preview.FilePath;
+            object[key] = value;
+            var json = JSON.stringify(object);
+
+            var filters = {
+                "url": "https://localhost:44382/image",
+                "method": "POST",
+                "timeout": 0,
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                "data": json,
+            };
+
+            $.ajax(filters).done(function (response) {
+                var image = document.getElementById("imageId");
+                image.src = "data:image/jpeg;base64," + response;
+            });
+            return false;
+        });
+
+        $("#submitForm").click(function () {
+            var filters = {
+                "url": "https://localhost:44382/image",
+                "method": "POST",
+                "timeout": 0,
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                "data": GetJson(),
+            };
+
+            $.ajax(filters).done(function (response) {
+                var image = document.getElementById("imageId");
+                image.src = "data:image/jpeg;base64," + response;
+            });
+            return false;
+        });
+
+        function GetJson() {
+            var preview = document.querySelector('img');
+            var formData = new FormData(
+                document.getElementById("imageFiltersForm"));
+            var object = {};
+            object['FilePath'] = preview.FilePath;
+            formData.forEach((value, key) => {
+                if (!Reflect.has(object, key)) {
+                    object[key] = value;
+                    return;
+                }
+                if (!Array.isArray(object[key])) {
+                    object[key] = [object[key]];
+                }
+                object[key].push(value);
+            });
+            var json = JSON.stringify(object);
+            console.log(json);
+            return json;
+        }
+
+        function previewFile() {
+            var preview = document.querySelector('img');
+            var file = document.querySelector('input[type=file]').files[0];
+            var reader = new FileReader();
+
+            reader.onloadend = function () {
+                preview.src = reader.result;
+            }
+
+            if (file) {
+                reader.readAsDataURL(file);
+            } else {
+                preview.src = "";
+            }
+        }
+
+    </script>
+}
+
+<head>
+    <title>Bootstrap Example</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <br />
+    <br />
+    <div class="container">
+        <form id="uploadImageForm" method="post"
+              enctype="application/x-www-form-urlencoded">
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <td colspan="6">
+                            <label for="filePath">Choose an image:</label>
+                        </td>
+                        <td colspan="6">
+                            <input type="file" id="imageFile" name="file" accept="image/png, image/jpeg"><br>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </form>
+        <form id="imageFiltersForm" method="post"
+              enctype="application/x-www-form-urlencoded">
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <td colspan="12" style="text-align: center; vertical-align: top">
+                            Select an action to perform
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Flip</td>
+                        <td colspan="6">
+                            <select name="Flip">
+                                <option value=""></option>
+                                <option value="horizontal">Horizontal</option>
+                                <option value="vertical">Vertical</option>
+                            </select>
+                            <button class="individualFilter" for="Flip" BorderStyle="None" Font-Size="X-Large">Flip Image</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Rotate</td>
+                        <td colspan="6">
+                            <label for="rotate">Degrees to rotate</label>
+                            <input type="text" value="0" name="RotateNDegree">
+                            <button class="individualFilter" for="RotateNDegree" BorderStyle="None" Font-Size="X-Large">Rotate Image</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Grayscale</td>
+                        <td colspan="6">
+                            <select name="ConvertToFixedGrayScale">
+                                <option value="false">False</option>
+                                <option value="true">True</option>
+                            </select>
+                            <button class="individualFilter" for="ConvertToFixedGrayScale" BorderStyle="None" Font-Size="X-Large">Apply</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Custom Grayscale</td>
+                        <td colspan="6">
+                            <input type="text" name="ConvertToGrayScale">
+                            <button class="individualFilter" for="ConvertToGrayScale" BorderStyle="None" Font-Size="X-Large">Apply</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Saturate</td>
+                        <td colspan="6">
+                            <input type="text" name="SaturateOrDeSaturate">
+                            <button class="individualFilter" for="SaturateOrDeSaturate" BorderStyle="None" Font-Size="X-Large">Apply</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Resize(x,y)</td>
+                        <td colspan="6">
+                            <label for="resize">(x,y): </label>
+                            <input type="text" name="Resize">
+                            <button class="individualFilter" for="Resize" BorderStyle="None" Font-Size="X-Large">Resize Image</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Resize by percentage</td>
+                        <td colspan="6">
+                            <input type="text" name="ResizePercentage">
+                            <button class="individualFilter" for="ResizePercentage" BorderStyle="None" Font-Size="X-Large">Resize Image</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Thumbnail</td>
+                        <td colspan="6">
+                            <select name="GenerateTumbnail">
+                                <option value="false">False</option>
+                                <option value="true">True</option>
+                            </select>
+                            <button class="individualFilter" for="GenerateTumbnail" BorderStyle="None" Font-Size="X-Large">Generate Thumbnail</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Rotate Left</td>
+                        <td colspan="6">
+                            <select name="RotateLeft">
+                                <option value="false">False</option>
+                                <option value="true">True</option>
+                            </select>
+                            <button class="individualFilter" for="RotateLeft" BorderStyle="None" Font-Size="X-Large">Rotate Image</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Rotate Right</td>
+                        <td colspan="6">
+                            <select name="RotateRight">
+                                <option value="false">False</option>
+                                <option value="true">True</option>
+                            </select>
+                            <button class="individualFilter" for="RotateRight" BorderStyle="None" Font-Size="X-Large">Rotate Image</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="6">
+                            <button type="submit" id="submitForm">Apply All Changes</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </form>
+    </div>
+    <img id="imageId" src="" />
+</body>
